@@ -1,0 +1,85 @@
+Python
+import streamlit as st
+import pandas as pd
+
+# (1) 데이터 구조
+base_grades = [7, 6, 5, 4, 3, 2, 1]
+scoville_names = [
+    "1천 스코빌 미만 (진라면 순한맛 수준)", 
+    "1천 ~ 1만 스코빌 (신라면, 청양고추 입문)", 
+    "1만 ~ 5만 스코빌 (불닭볶음면 수준)", 
+    "5만 ~ 10만 스코빌 (핵불닭, 타이 고추)", 
+    "10만 ~ 50만 스코빌 (하바네로 고추)", 
+    "50만 ~ 150만 스코빌 (부트 졸로키아)", 
+    "150만 스코빌 이상 (캐롤라이나 리퍼, 사신 수준)"
+]
+
+# (2) 함수: 위험 등급 계산
+def calculate_risk(level_index, age):
+    grade = base_grades[level_index]
+    
+    if age < 15 or age >= 60:
+        grade = grade - 1
+        
+    # 70세 이상이면 무조건 4등급 이하(위험도 높음)로 고정
+    if age >= 70:
+        if grade > 4:
+            grade = 4
+            
+    if grade < 1:
+        grade = 1
+        
+    return grade
+
+# --- 화면 구성 (UI) ---
+st.title("🔥 스코빌 지수 위험도 측정기")
+st.write("당신의 맵기 한계와 나이를 바탕으로 위험도를 측정해 드립니다.")
+
+st.divider() # 구분선
+
+# 사용자 입력 받기 (input() 대신 Streamlit 위젯 사용)
+choice_name = st.selectbox("도전할 매운맛을 선택하세요:", scoville_names)
+user_age = st.number_input("도전자의 나이를 입력하세요:", min_value=1, max_value=120, value=17, step=1)
+
+# '영향도 알아내기' 버튼 만들기
+if st.button("영향도 알아내기", type="primary"):
+    
+    st.subheader("...🔥 위장 타격 가능성 계산 결과 🔥...")
+    
+    # 선택한 메뉴의 인덱스(번호) 찾기
+    level_idx = scoville_names.index(choice_name)
+    
+    # 함수 실행해서 결과 얻기
+    final_grade = calculate_risk(level_idx, user_age)
+    
+    # 결과 출력 (print 대신 st.success, st.error 등 사용)
+    st.success(f"✅ **선택한 매운맛:** {choice_name}")
+    st.info(f"✅ **도전자 나이:** {user_age}세")
+    st.error(f"🚨 **최종 위험 등급: {final_grade}등급** 🚨")
+    
+    # 고령자 강력 경고
+    if user_age >= 70 and level_idx >= 4:
+        st.warning("⚠️ [긴급 경고] 고령자의 10만 스코빌 이상 섭취는 심박수 증가 및 위경련을 유발하므로 절대 금지합니다!")
+        
+    st.divider()
+
+# 표 형태 출력 (pandas 데이터프레임과 st.table 사용)
+st.markdown("### 📊 위험 등급 기준표")
+
+table_data = {
+    "등급": [1, 2, 3, 4, 5, 6, 7],
+    "위험 수준 및 예상 증상": [
+        "생명 위협 (응급실 실려감 🚑)",
+        "심각한 위험 (위경련, 다음날 화장실에서 못 나옴)",
+        "강한 고통 (눈물, 콧물, 우유 1L 원샷 필수)",
+        "위장 자극 (속이 쓰리고 입에서 불을 뿜음 🐉)",
+        "기분 좋은 매콤함 (스트레스가 풀림)",
+        "평화로움 (살짝 매콤한 맛이 스쳐 지나감)",
+        "완전 안전 (아기들도 웃으면서 먹는 수준 🍼)"
+    ]
+}
+
+# 딕셔너리를 표(데이터프레임)로 변환 후 화면에 그리기
+df = pd.DataFrame(table_data)
+# 인덱스(0, 1, 2...) 숨기고 깔끔하게 표출력
+st.table(df.set_index("등급"))
